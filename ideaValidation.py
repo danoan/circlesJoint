@@ -135,28 +135,45 @@ def uniformMapping(beta):
               [beta-pi,beta) => [0,0.5)
               [beta,beta+pi] => [0.5,1]
     '''
-    return lambda x: x/(2*np.pi) + beta-np.pi
+    return lambda x: x/(2*np.pi) + 1.0/(2*np.pi)*(np.pi-beta)
 
 
-def wMapping(D2,w,beta):
+def wMapping(D2,W):
     '''
     It maps the intervals:
              [0,0.5) => [0,w)
              [0.5,1] => [w,D2]
+
+             A*e^(k*0.5) + C = W
+             A*e^(k) + C = D2
     '''
-    pass
+    A = pow(W,2)/(D2-2*W)
+    k = np.log(W/A+1)*2
+    C = -A
+
+    return lambda x: A*pow(np.e,k*x)+C
 
 
-def wMappingReverse(D2,w,beta):
+def wMappingReverse(D2,W):
     '''
     It maps the intervals:
              [0,0.5) => [0,D2-w)
              [0.5,1] => [D2-w,D2]
+
+             A*e^(k*0.5) + = D2-W
+             A*e^(k) - 1 = D2
     '''
-    pass
+    A = pow(D2-W,2)/(D2-2*(D2-W))
+    k = np.log((D2-W)/A+1)*2
+    C = -A
+
+    print(A,k)
+
+    return lambda x: A*pow(np.e,k*x)+C    
 
 def plotUniformMapping(beta):
     '''
+
     Test uniform mapping
     '''
     f = uniformMapping(beta)
@@ -171,17 +188,45 @@ def plotUniformMapping(beta):
     plt.show()
     
 
-def plotWMapping():
+def plotWMapping(D2,W,beta):
     '''
     Tests wMapping
     '''
-    pass
+    um = uniformMapping(beta)
+    wm = wMapping(D2,W)
 
-def plotWMappingReverse():
+    umDomain = np.arange(beta-np.pi,beta+np.pi,0.01)
+    wmDomain = [um(x) for x in umDomain]
+    
+    image = [ wm(x) for x in wmDomain]
+
+    
+
+    fig = plt.figure(1)
+    plt.subplot(111)
+    plt.plot(umDomain,image,"b-")
+    plt.show()
+    
+
+def plotWMappingReverse(D2,W,beta):
     '''
     Tests wMappingReverse
     '''
-    pass
+    um = uniformMapping(beta)
+    wm = wMappingReverse(D2,W)
+
+    umDomain = np.arange(beta-np.pi,beta+np.pi,0.01)
+    wmDomain = [um(x) for x in umDomain]
+    
+    image = [ wm(x) for x in wmDomain]
+
+    
+
+    fig = plt.figure(1)
+    plt.subplot(111)
+    plt.plot(umDomain,image,"b-")
+    plt.show()
+    
 
 def plotTest(beta):
     '''
@@ -190,13 +235,32 @@ def plotTest(beta):
                 S(theta,beta) x G(theta,beta-pi/2) 
     on the interval 0 <= theta <= 2pi.
     '''
-    pass
+    D1 = 0.0
+    D2 = 4.0
+    W = 0.5
+    f = 1e-4
+
+    k = findAdequateK(D2,W,f)
+    
+    domain = np.arange(beta-np.pi,beta+np.pi,0.01)
+
+    wm = wMapping(D2,W)
+    um = uniformMapping(beta)
+    
+    G = lambda x: UT.heaviside(k,wm(um(x)))
+
+    image = [ G(x) for x in domain ]
+
+    fig = plt.figure(1)
+    plt.subplot(111)
+    plt.plot(domain,image,"r-")
+    plt.show()
 
 
 def main():
     D1 = 0
     D2 = 4
-    W = 1
+    W = 0.5
     f=1e-4
     tolerance=1e-10
     
@@ -212,8 +276,14 @@ def main():
     plotHeavisideFunctions(k,s)
     '''
     
-    uniformMapping(2.0)
-    plotUniformMapping(1.0)
+    #uniformMapping(2.0)
+    #plotUniformMapping(1.0)
+
+    #plotWMapping(D2,W,1.0)
+    #plotWMappingReverse(D2,W,1.0)
+
+    plotTest(1.0)
+    
 
 if __name__=='__main__':
     main()
