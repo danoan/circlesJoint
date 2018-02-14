@@ -3,6 +3,8 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
+from scipy.optimize import newton
+
 import utils as UT
 
 def rectParameterization(l1,l2):
@@ -64,60 +66,40 @@ def findAdequateK(D2,W,f):
     Such that we have H_k(0) = 0. 
 
     An adequate k is defined as being a real number such that
-                              H_k(1) < 1 - f,
+                              H_k(W) < 1 - f,
     where 0 < f << 1.
 
-    Notice that we have H_k(x) ~=1 for x>1.
+    Notice that we have H_k(x) ~=1 for x>W.
     '''
     k=1
-    while(1-UT.heaviside(k,1)>f):
+    while(1-UT.heaviside(k,W)>f):
         #print(1-UT.heaviside(k,1))
         k+=2
     return k
 
-def findAdequateS(D2,k,W,tolerance):
+def findAdequateS(D2):
     '''
     Consider a Mirrowed version of the Heavside step function on
     the vertical plane x=0.
 
-                       Ĥ_{k,s}(x) = 1/(1+e^(k(x-s))),
+                       Ĥ_{k,s}(x) = 2*(1/(1+e^(k(x-s))-0.5),
     for k>0,s>0.
 
-    Define
-                              ff = 1 - H_k(1).
-
-    An adequate s is defined such that
-
-                              1-Ĥ_{k,s}(1)=ff.
-
-    Notice that the following statements hold
-                        1)  H_k(1) == Ĥ_{k,s}(1).
-                        2)  H_k(x) > H_{k,s}(x), for x > 1.
-                        3)  H_k(x) < H_{k,s}(x), for x < 1.
+    The adequate s is simply the value of D2
     '''
-    ff = 1-UT.heaviside(k,1)
-    s = -1.0/k * np.log(ff/(1-ff)) + (D2-W)
+    return D2
 
-    h = 1-UT.heaviside(k,1)
-    mh = 1-UT.mirrorHeaviside(k,1,s)
-    
-    step = 0.1
-    while( np.abs(h-mh) > tolerance ):
-        s-=step
-        mh = 1-UT.mirrorHeaviside(k,1,s)
-    
-    return s
+def testHeavisideFunctions(D2,W,k,s,tolerance):
+    print( "H_k(W) > Ĥ_{k,s}(D2-W)",
+           np.abs(UT.heaviside(k,W)-UT.mirrorHeaviside(k,D2-W,s)) < tolerance)
 
-def testHeavisideFunctions(k,s,tolerance):
-    print(UT.heaviside(k,1))
-    print(UT.mirrorHeaviside(k,1,s))
-    print( np.abs(UT.heaviside(k,1)-UT.mirrorHeaviside(k,1,s)) < tolerance)
+    print("H_k(W+tolerance) > Ĥ_{k,s}(D2-W+tolerance)",
+          UT.heaviside(k,W+tolerance)> UT.mirrorHeaviside(k,D2-W+tolerance,s))
+    print("H_k(W-tolerance) > Ĥ_{k,s}(D2-W-tolerance)",
+          UT.heaviside(k,W-tolerance)< UT.mirrorHeaviside(k,D2-W-tolerance,s))
 
-    print(UT.heaviside(k,1+tolerance)> UT.mirrorHeaviside(k,1+tolerance,s))
-    print(UT.heaviside(k,1-tolerance)< UT.mirrorHeaviside(k,1-tolerance,s))
-
-def plotHeavisideFunctions(k,s):
-    domain = np.arange(-2,2,0.01)
+def plotHeavisideFunctions(D1,D2,k,s):
+    domain = np.arange(D1,D2,0.01)
     imageH = [ UT.heaviside(k,x) for x in domain]
     imageMH = [ UT.mirrorHeaviside(k,x,s) for x in domain]
     
@@ -128,6 +110,7 @@ def plotHeavisideFunctions(k,s):
     plt.subplot(212)
     plt.plot(domain,imageMH,"r-")
     plt.show()
+ 
     
 def uniformMapping(beta):
     '''
@@ -149,6 +132,7 @@ def wMapping(D2,W):
     '''
     A = pow(W,2)/(D2-2*W)
     k = np.log(W/A+1)*2
+    
     C = -A
 
     return lambda x: A*pow(np.e,k*x)+C
@@ -228,52 +212,62 @@ def plotWMappingReverse(D2,W,beta):
     plt.show()
     
 
-def plotTest(beta):
+def plotTest(D1,D2,W,f,tolerance,beta):
     '''
     For a given beta, plot the function:
 
                 S(theta,beta) x G(theta,beta-pi/2) 
     on the interval 0 <= theta <= 2pi.
     '''
-    D1 = 0.0
-    D2 = 4.0
-    W = 0.5
-    f = 1e-4
-
     k = findAdequateK(D2,W,f)
+    s = findAdequateS(D2)
+
+    print(k,f,s)
     
     domain = np.arange(beta-np.pi,beta+np.pi,0.01)
 
     wm = wMapping(D2,W)
+    wrm = wMappingReverse(D2,W)
     um = uniformMapping(beta)
+
+    domainWm = [ um(x) for x in domain ]
     
     G = lambda x: UT.heaviside(k,wm(um(x)))
+    S = lambda x: UT.mirrorHeaviside(k,wrm(um(x)),s)
 
-    image = [ G(x) for x in domain ]
-
+    imageG = [ G(x) for x in domain ]
+    imageS = [ S(x) for x in domain ]
+    imageGS = [ S(x)*G(x) for x in domain ]
+    
     fig = plt.figure(1)
-    plt.subplot(111)
-    plt.plot(domain,image,"r-")
+    plt.subplot(311)
+    plt.plot(domain,imageG,"r-")
+
+    plt.subplot(312)
+    plt.plot(domain,imageS,"b-")
+
+    plt.subplot(313)
+    plt.plot(domain,imageGS,"g-")
     plt.show()
 
 
 def main():
     D1 = 0
     D2 = 4
-    W = 0.5
+    W = 0.1
     f=1e-4
-    tolerance=1e-10
+    tolerance=1e-8
     
     #plotRect()
 
     '''
     k=findAdequateK(D2,W,f)
-    s=findAdequateS(D2,k,W,tolerance)
+    s=findAdequateS(D2)
     print(k)
     print(s)
 
-    testHeavisideFunctions(k,s,tolerance)
-    plotHeavisideFunctions(k,s)
+    testHeavisideFunctions(D2,W,k,s,tolerance)
+    plotHeavisideFunctions(D1,D2,k,s)
     '''
     
     #uniformMapping(2.0)
@@ -282,7 +276,7 @@ def main():
     #plotWMapping(D2,W,1.0)
     #plotWMappingReverse(D2,W,1.0)
 
-    plotTest(1.0)
+    plotTest(D1,D2,W,f,tolerance,1.0)
     
 
 if __name__=='__main__':
