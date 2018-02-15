@@ -81,7 +81,7 @@ def plotWMapping(D2,W,beta):
     um = UT.uniformMapping(beta)
     wm = UT.wMapping(D2,W)
 
-    umDomain = np.arange(beta-np.pi,beta+np.pi,0.01)
+    umDomain = np.arange(0,2*np.pi,0.01)
     wmDomain = [um(x) for x in umDomain]
     
     image = [ wm(x) for x in wmDomain]
@@ -89,7 +89,7 @@ def plotWMapping(D2,W,beta):
     
     fig = plt.figure(1)
     plt.subplot(111)
-    plt.plot(umDomain,image,"b-")
+    plt.plot(wmDomain,image,"b-")
     plt.show()
     
 
@@ -100,7 +100,7 @@ def plotWMappingReverse(D2,W,beta):
     um = UT.uniformMapping(beta)
     wm = UT.wMappingReverse(D2,W)
 
-    umDomain = np.arange(beta-np.pi,beta+np.pi,0.01)
+    umDomain = np.arange(0,2*np.pi,0.01)
     wmDomain = [um(x) for x in umDomain]
     
     image = [ wm(x) for x in wmDomain]
@@ -109,7 +109,7 @@ def plotWMappingReverse(D2,W,beta):
 
     fig = plt.figure(1)
     plt.subplot(111)
-    plt.plot(umDomain,image,"b-")
+    plt.plot(wmDomain,image,"b-")
     plt.show()
     
 
@@ -123,13 +123,15 @@ def plotTest(D1,D2,W,f,tolerance,beta):
     k = UT.findAdequateK(D2,W,f)
     s = UT.findAdequateS(D2)
     
-    domain = np.arange(beta-np.pi,beta+np.pi,0.01)
+    domain = np.arange(0,2*np.pi,0.01)
 
     wm = UT.wMapping(D2,W)
     wrm = UT.wMappingReverse(D2,W)
     um = UT.uniformMapping(beta)
 
     domainWm = [ um(x) for x in domain ]
+    domainHs = [ wm(um(x)) for x in domain ]
+    
     
     G = lambda x: UT.heaviside(k,wm(um(x)))
     S = lambda x: UT.mirrorHeaviside(k,wrm(um(x)),s)
@@ -154,16 +156,16 @@ def main():
     D1 = 0
     D2 = 4
     W = 0.001
-    f=1e-2
+    f=1e-4
     tolerance=1e-8
     
-    plotRect()
+    #plotRect()
 
-    testHeavisideFunctions(D2,W,f,tolerance)
+    #testHeavisideFunctions(D2,W,f,tolerance)
 
     plotHeavisideFunctions(D1,D2,W,f)
     
-    plotUniformMapping(1.0)
+    #plotUniformMapping(1.0)
 
     plotWMapping(D2,W,1.0)
     plotWMappingReverse(D2,W,1.0)

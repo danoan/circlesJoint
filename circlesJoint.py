@@ -1,3 +1,5 @@
+import sys
+
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -5,8 +7,10 @@ import utils as UT
 
 D1 = 0
 D2 = 4
-W = 0.000001
-f = 1e-2
+W = 0.01
+f=1e-10
+tolerance=1e-8
+
 k = UT.findAdequateK(D2,W,f)
 s = UT.findAdequateS(D2)
 
@@ -19,6 +23,7 @@ def um(beta):
 
 def G(theta,beta):
     pum = um(beta)
+    print("::",wm(pum(theta)))
     return UT.heaviside(k,wm(pum(theta)))
 
 def S(theta,beta):
@@ -32,18 +37,27 @@ def ccX(theta,centerXList,centerYList,radiusList,betaList):
     np3 = len(radiusList)
     np4 = len(betaList)
     if not(np1==np2==np3==np4):
-        print("Missing parameters")
-        exit
+        raise("Missing parameters")
+        
 
-    lp = list(zip(centerXList,centerYList,radiusList,betaList))
-    pp = zip(lp,lp[1:]+[ lp[0] ])
+    lp = list( zip(centerXList,centerYList,radiusList,betaList) )
+    pp = zip(lp[:-1],lp[1:])
     x = 0
+    i=0
     for t1,t2 in pp:
         (cx,cy,r,beta) = t1
         (ncx,ncy,nr,nbeta) = t2
-        
-        x += cx+r*np.cos(theta)*S(theta,beta)*G(theta,beta-np.pi/2) + ncx+nr*np.cos(theta)*S(theta,beta+np.pi/2)*G(theta,beta)
 
+        _theta = theta
+        _beta = beta
+        _nbeta = nbeta
+
+        tx = (cx+r*np.cos(_theta))*G(_theta,_beta)*S(_theta,_nbeta)
+
+        x += tx
+        
+        i+=1
+        
     return x
 
 def ccY(theta,centerXList,centerYList,radiusList,betaList):
@@ -56,13 +70,26 @@ def ccY(theta,centerXList,centerYList,radiusList,betaList):
         exit
 
     lp = list( zip(centerXList,centerYList,radiusList,betaList) )
-    pp = zip(lp,lp[1:]+[ lp[0] ])
+    pp = zip(lp[:-1],lp[1:])
     y = 0
+    i=0
     for t1,t2 in pp:
         (cx,cy,r,beta) = t1
         (ncx,ncy,nr,nbeta) = t2
-        
-        y += cy+r*np.sin(theta)*S(theta,beta)*G(theta,beta-np.pi/2) + ncy+nr*np.sin(theta)*S(theta,beta+np.pi/2)*G(theta,beta)
+
+        _theta = theta
+        _beta = beta
+        _nbeta = nbeta
+
+        ty = (cy+r*np.sin(_theta))*G(_theta,_beta)*S(_theta,_nbeta)
+            
+        y+= ty
+
+        print(_theta,_beta,_nbeta,G(_theta,_beta),S(_theta,_nbeta))
+        #sys.exit()
+
+        i+=1
+    print("---")
 
     return y
 
@@ -110,10 +137,10 @@ def lengthDiff(circleJoint,l1,l2):
 
 class CircleJoint:
     def __init__(self):
-        self.centerXList = [-0.5,0.5]
-        self.centerYList = [0,0]
-        self.radiusList = [3,3]
-        self.betaList = [np.pi/4.0,3*np.pi/4.0]
+        self.centerXList = [0,-1]
+        self.centerYList = [0,-1]
+        self.radiusList = [4,-1]
+        self.betaList = [0,2*np.pi]
 
 
 def main():

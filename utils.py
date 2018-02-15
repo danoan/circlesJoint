@@ -69,14 +69,25 @@ def findAdequateS(D2):
 
 def uniformMapping(beta):
     '''
+    Input: -i*pi0 <= beta <= i*pi for i > 0
+
     It maps the intervals:
               [beta-pi,beta) => [0,0.5)
               [beta,beta+pi] => [0.5,1]
+
+    Remark: In order to map the lambda input interval
+    [0,2pi] to the mapped interval [beta-pi,beta], we 
+    apply the transformation:
+
+                 x* = x + (beta-pi)
     '''
-    return lambda x: x/(2*np.pi) + 1.0/(2*np.pi)*(np.pi-beta)
+    
+    return lambda x: ( (x - beta + np.pi + 8*np.pi)%(2*np.pi) )/(2*np.pi)
 
 def wMapping(D2,W):
     '''
+    Input: 0 < W < D2
+    
     It maps the intervals:
              [0,0.5) => [0,w)
              [0.5,1] => [w,D2]
