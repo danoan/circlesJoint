@@ -36,28 +36,30 @@ def uniformJoint(n,a):
 
     for i in range(1,n):
         pc = circles[-1]
-        
+
+        r = 4 if i%2==0 else 32
+        rs = r + pc[0]
         if i%2==1: #Concave
             tto = np.pi + pc[2]
             tfrom = tto - a
 
-            cx = pc[3] + 8*np.cos(pc[2])
-            cy = pc[4] + 8*np.sin(pc[2])
+            cx = pc[3] + rs*np.cos(pc[2])
+            cy = pc[4] + rs*np.sin(pc[2])
             
         else: #Convex
             tfrom = np.pi + pc[1]
             tto = tfrom + k + a
 
-            cx = pc[3] + 8*np.cos(pc[1])
-            cy = pc[4] + 8*np.sin(pc[1])
+            cx = pc[3] + rs*np.cos(pc[1])
+            cy = pc[4] + rs*np.sin(pc[1])
 
-        circles.append( [4,tfrom,tto,cx,cy] )
+        circles.append( [r,tfrom,tto,cx,cy] )
 
     return circles
         
 
 def main():
-    circles = uniformJoint(8,np.pi/6)
+    circles = uniformJoint(8,np.pi/12)
 
     fig = plt.figure(1)
     plt.subplot(111)
